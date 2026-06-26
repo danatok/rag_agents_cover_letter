@@ -28,7 +28,6 @@ FILE_METADATA = {
     "cover_letter.txt": {"type": "cover_letter", "skills": []},
     "cover_letter_old.txt": {"type": "cover_letter", "skills": []},
     "cover_letter_general.txt": {"type": "cover_letter", "skills": []},
-    "cover_letter sonova.txt": {"type": "cover_letter", "skills": []},
     "project_recommender.txt": {"type": "project", "skills": []},
     "model monitoring.txt": {"type": "project", "skills": []},
     "motivational.txt": {"type": "other", "skills": []},
