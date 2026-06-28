@@ -6,8 +6,8 @@ import tiktoken
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_core.documents import Document
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import OpenAIEmbeddings
-from pypdf import PdfReader
 
 load_dotenv()
 
@@ -61,8 +61,8 @@ def load_documents() -> list[Document]:
 def load_pdf_documents() -> list[Document]:
     documents = []
     for path in sorted(COVER_LETTERS_DIR.glob("*.pdf")):
-        reader = PdfReader(path)
-        text = "\n".join(page.extract_text() or "" for page in reader.pages).strip()
+        pages = PyPDFLoader(str(path)).load()
+        text = "\n".join(page.page_content for page in pages).strip()
         if not text:
             continue
         documents.append(
