@@ -32,22 +32,18 @@ def make_pdf_bytes(text: str) -> bytes:
 def test_load_documents_reads_known_file_with_correct_metadata(tmp_path, monkeypatch):
     (tmp_path / "cv.txt").write_text("Experienced engineer.", encoding="utf-8")
     monkeypatch.setattr(ingest, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(
-        ingest, "FILE_METADATA", {"cv.txt": {"type": "cv", "skills": ["python", "sql"]}}
-    )
 
     docs = ingest.load_documents()
 
     assert len(docs) == 1
     doc = docs[0]
     assert doc.page_content == "Experienced engineer."
-    assert doc.metadata == {"source": "cv.txt", "type": "cv", "skills": "python, sql"}
+    assert doc.metadata == {"source": "cv.txt", "type": "cv", "skills": ""}
 
 
 def test_load_documents_falls_back_to_other_for_unmapped_file(tmp_path, monkeypatch):
     (tmp_path / "random_notes.txt").write_text("Some notes.", encoding="utf-8")
     monkeypatch.setattr(ingest, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(ingest, "FILE_METADATA", {})
 
     docs = ingest.load_documents()
 
@@ -60,7 +56,6 @@ def test_load_documents_skips_empty_files(tmp_path, monkeypatch):
     (tmp_path / "empty.txt").write_text("   \n", encoding="utf-8")
     (tmp_path / "cv.txt").write_text("Real content.", encoding="utf-8")
     monkeypatch.setattr(ingest, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(ingest, "FILE_METADATA", {"cv.txt": {"type": "cv", "skills": []}})
 
     docs = ingest.load_documents()
 
@@ -72,7 +67,6 @@ def test_load_documents_ignores_non_txt_files(tmp_path, monkeypatch):
     (tmp_path / "cv.txt").write_text("Real content.", encoding="utf-8")
     (tmp_path / "notes.md").write_text("Markdown notes.", encoding="utf-8")
     monkeypatch.setattr(ingest, "DATA_DIR", tmp_path)
-    monkeypatch.setattr(ingest, "FILE_METADATA", {"cv.txt": {"type": "cv", "skills": []}})
 
     docs = ingest.load_documents()
 
@@ -86,6 +80,20 @@ def test_load_documents_returns_empty_list_for_empty_directory(tmp_path, monkeyp
     docs = ingest.load_documents()
 
     assert docs == []
+
+
+def test_infer_type_matches_known_filenames():
+    assert ingest.infer_type("cv.txt") == "cv"
+    assert ingest.infer_type("cover_letter.txt") == "cover_letter"
+    assert ingest.infer_type("cover letter Dana.pdf") == "cover_letter"
+    assert ingest.infer_type("project_recommender.txt") == "project"
+    assert ingest.infer_type("model monitoring.txt") == "project"
+    assert ingest.infer_type("motivational.txt") == "other"
+
+
+def test_infer_type_is_case_insensitive():
+    assert ingest.infer_type("CV.TXT") == "cv"
+    assert ingest.infer_type("COVER_LETTER_OLD.TXT") == "cover_letter"
 
 
 def test_load_pdf_documents_reads_pdf_with_cover_letter_metadata(tmp_path, monkeypatch):

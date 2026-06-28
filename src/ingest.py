@@ -21,17 +21,22 @@ COVER_LETTERS_DIR = DATA_DIR / "cover letters"
 CHROMA_DIR = PROJECT_ROOT / "chroma_db"
 COLLECTION_NAME = "cv_documents"
 
-# Per-file metadata. Edit this as you add/rename files in data/.
-# "skills" is a free-form list you can use to filter retrieval later.
-FILE_METADATA = {
-    "cv.txt": {"type": "cv", "skills": []},
-    "cover_letter.txt": {"type": "cover_letter", "skills": []},
-    "cover_letter_old.txt": {"type": "cover_letter", "skills": []},
-    "cover_letter_general.txt": {"type": "cover_letter", "skills": []},
-    "project_recommender.txt": {"type": "project", "skills": []},
-    "model monitoring.txt": {"type": "project", "skills": []},
-    "motivational.txt": {"type": "other", "skills": []},
-}
+# Keyword -> type, checked in order against the lowercased filename.
+TYPE_KEYWORDS = [
+    ("cover_letter", "cover_letter"),
+    ("cover letter", "cover_letter"),
+    ("cv", "cv"),
+    ("project", "project"),
+    ("model", "project"),
+]
+
+
+def infer_type(filename: str) -> str:
+    name = filename.lower()
+    for keyword, doc_type in TYPE_KEYWORDS:
+        if keyword in name:
+            return doc_type
+    return "other"
 
 
 def load_documents() -> list[Document]:
@@ -40,14 +45,13 @@ def load_documents() -> list[Document]:
         text = path.read_text(encoding="utf-8").strip()
         if not text:
             continue
-        meta = FILE_METADATA.get(path.name, {"type": "other", "skills": []})
         documents.append(
             Document(
                 page_content=text,
                 metadata={
                     "source": path.name,
-                    "type": meta["type"],
-                    "skills": ", ".join(meta["skills"]),
+                    "type": infer_type(path.name),
+                    "skills": "",
                 },
             )
         )
