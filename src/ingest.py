@@ -99,9 +99,17 @@ def chunk_documents(documents: list[Document]) -> list[Document]:
 
 
 def ingest() -> Chroma:
-    documents = load_documents() + load_pdf_documents()
+    #documents = load_documents() + load_pdf_documents()
+    documents = load_pdf_documents()
+
     chunks = chunk_documents(documents)
+    # Development / portfolio project → OpenAI is fine
+    # Clean, simple, no truncation worry
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+
+    # If you want fully local + no truncation worry
+    #embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")
+    # 512 token limit, free, best open-source retrieval quality
     vectorstore = Chroma.from_documents(
         chunks,
         embedding=embeddings,
