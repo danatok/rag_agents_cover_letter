@@ -9,7 +9,7 @@ from langchain_core.documents import Document
 from langchain_community.callbacks import get_openai_callback
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_openai import OpenAIEmbeddings
-# from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 load_dotenv()
 
@@ -105,13 +105,13 @@ def ingest() -> Chroma:
     documents = load_pdf_documents()
 
     # instead of splitting by characters, split by your own delimiters
-    # splitter = RecursiveCharacterTextSplitter(
-    #     chunk_size=300,
-    #     chunk_overlap=50,
-    #     separators=["\n\n", "\n", ". "]  # try paragraph breaks first, then lines, then sentences
-    # )
-    # chunks = splitter.split_documents(documents)
-    chunks = chunk_documents(documents)
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=300,
+        chunk_overlap=50,
+        separators=["\n\n", "\n", ". "]  # try paragraph breaks first, then lines, then sentences
+    )
+    chunks = splitter.split_documents(documents)
+    #chunks = chunk_documents(documents)
     # Development / portfolio project → OpenAI is fine
     # Clean, simple, no truncation worry
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
