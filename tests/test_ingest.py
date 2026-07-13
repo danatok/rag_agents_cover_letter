@@ -99,19 +99,44 @@ def test_infer_type_is_case_insensitive():
 def test_load_pdf_documents_reads_pdf_with_cover_letter_metadata(tmp_path, monkeypatch):
     (tmp_path / "letter.pdf").write_bytes(make_pdf_bytes("Dear Hiring Team"))
     monkeypatch.setattr(ingest, "COVER_LETTERS_DIR", tmp_path)
+    monkeypatch.setattr(
+        ingest,
+        "extract_metadata_llm",
+        lambda text, source: {
+            "source": source,
+            "type": "cover_letter",
+            "company": "",
+            "skills": "",
+        },
+    )
 
     docs = ingest.load_pdf_documents()
 
     assert len(docs) == 1
     doc = docs[0]
     assert "Dear Hiring Team" in doc.page_content
-    assert doc.metadata == {"source": "letter.pdf", "type": "cover_letter", "skills": ""}
+    assert doc.metadata == {
+        "source": "letter.pdf",
+        "type": "cover_letter",
+        "company": "",
+        "skills": "",
+    }
 
 
 def test_load_pdf_documents_ignores_non_pdf_files(tmp_path, monkeypatch):
     (tmp_path / "letter.pdf").write_bytes(make_pdf_bytes("Dear Hiring Team"))
     (tmp_path / "notes.txt").write_text("Not a PDF.", encoding="utf-8")
     monkeypatch.setattr(ingest, "COVER_LETTERS_DIR", tmp_path)
+    monkeypatch.setattr(
+        ingest,
+        "extract_metadata_llm",
+        lambda text, source: {
+            "source": source,
+            "type": "cover_letter",
+            "company": "",
+            "skills": "",
+        },
+    )
 
     docs = ingest.load_pdf_documents()
 
