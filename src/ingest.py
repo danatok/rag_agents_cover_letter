@@ -160,6 +160,14 @@ def ingest() -> Chroma:
     # If you want fully local + no truncation worry
     #embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")
     # 512 token limit, free, best open-source retrieval quality
+
+    # Drop any existing collection first so re-running ingest() doesn't duplicate chunks.
+    Chroma(
+        persist_directory=str(CHROMA_DIR),
+        embedding_function=embeddings,
+        collection_name=COLLECTION_NAME,
+    ).delete_collection()
+
     with get_openai_callback() as cb:
         vectorstore = Chroma.from_documents(
             chunks,
