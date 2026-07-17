@@ -28,6 +28,17 @@ def test_get_retriever_passes_k_to_as_retriever(mock_embeddings, mock_chroma):
     )
 
 
+@patch("src.retrieve.Chroma")
+@patch("src.retrieve.OpenAIEmbeddings")
+def test_get_retriever_adds_type_filter_when_doc_type_given(mock_embeddings, mock_chroma):
+    retrieve.get_retriever(k=5, doc_type="cv")
+
+    mock_chroma.return_value.as_retriever.assert_called_once_with(
+        search_type="similarity",
+        search_kwargs={"k": 5, "filter": {"type": "cv"}},
+    )
+
+
 @patch("src.retrieve.get_retriever")
 def test_retrieve_returns_page_content_strings(mock_get_retriever):
     mock_get_retriever.return_value.invoke.return_value = [
@@ -48,3 +59,17 @@ def test_retrieve_returns_empty_list_when_no_chunks(mock_get_retriever):
     result = retrieve.retrieve("obscure query")
 
     assert result == []
+
+
+@patch("src.retrieve.get_retriever")
+def test_retrieve_by_type_returns_page_content_strings(mock_get_retriever):
+    mock_get_retriever.return_value.invoke.return_value = [
+        Document(page_content="cv chunk one", metadata={"type": "cv"}),
+        Document(page_content="cv chunk two", metadata={"type": "cv"}),
+    ]
+
+    result = retrieve.retrieve_by_type("some query", "cv", k=2)
+
+    assert result == ["cv chunk one", "cv chunk two"]
+    mock_get_retriever.assert_called_once_with(2, doc_type="cv")
+    mock_get_retriever.return_value.invoke.assert_called_once_with("some query")

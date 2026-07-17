@@ -1,4 +1,4 @@
-"""Chunk the .txt files in data/, embed them, and store in a persistent Chroma collection."""
+"""Load PDFs from data/, extract metadata, chunk, embed, and store in a persistent Chroma collection."""
 
 import json
 from pathlib import Path
@@ -59,6 +59,11 @@ PROJECTS_DIR = DATA_DIR / "projects"
 CV_DIR = DATA_DIR / "cv"
 CHROMA_DIR = PROJECT_ROOT / "chroma_db"
 COLLECTION_NAME = "cv_documents"
+
+# Legacy .txt-based pipeline (load_documents/infer_type/chunk_documents below).
+# ingest() no longer calls these - PDFs + extract_metadata_llm are the current path -
+# but they're kept for the data/*.txt fallback still used in notebooks/explore.ipynb
+# section 1, and covered by tests in test_ingest.py.
 
 # Keyword -> type, checked in order against the lowercased filename.
 TYPE_KEYWORDS = [
@@ -142,24 +147,21 @@ def chunk_documents(documents: list[Document]) -> list[Document]:
 
 
 def ingest() -> Chroma:
-    #documents = load_documents() + load_pdf_documents()
     documents = load_pdf_documents() + load_project_documents() + load_cv_documents()
 
-    # instead of splitting by characters, split by your own delimiters
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=300,
         chunk_overlap=50,
         separators=["\n\n", "\n", ". "]  # try paragraph breaks first, then lines, then sentences
     )
     chunks = splitter.split_documents(documents)
-    #chunks = chunk_documents(documents)
-    # Development / portfolio project → OpenAI is fine
-    # Clean, simple, no truncation worry
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    # Alternative: chunk_documents(documents) - the token-count-based legacy chunker
+    # above - swap in if char-based splitting starts cutting sentences badly.
 
-    # If you want fully local + no truncation worry
-    #embeddings = HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")
-    # 512 token limit, free, best open-source retrieval quality
+    # Development / portfolio project → OpenAI is fine. Clean, simple, no truncation worry.
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    # Alternative for fully local + free, no truncation worry (512 token limit, best
+    # open-source retrieval quality): HuggingFaceEmbeddings(model_name="BAAI/bge-base-en-v1.5")
 
     # Drop any existing collection first so re-running ingest() doesn't duplicate chunks.
     Chroma(
